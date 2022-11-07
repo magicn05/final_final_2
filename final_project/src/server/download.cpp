@@ -15,12 +15,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>
-
+#include <time.h>
 using namespace std;
 
-int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
-             int &f_no) {
+int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no) {
   FILE *fp;
+  int fd;
   DIR *dir;
   char write_buf[2048];
   char buf[1024];
@@ -36,15 +36,18 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
   char data_fp[1024];
   string addr = "/home/mobis/Public/Server/";
   string send_file;
+  struct stat sb;
 
   while (end_flag != 1) {
     f_manager.list_clear();
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%s", "WINDOW");
     send(sd, buf, strlen(buf), 0);
-    usleep(0.5);
+    sleep(1);
+    memset(buf, 0, sizeof(buf));
     sprintf(buf, "%s", "자료실 베타 테스트!\n\n");
     send(sd, buf, strlen(buf), 0);
+    usleep(0.5);
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%s",
             "=================================================================="
@@ -63,16 +66,16 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
     memset(buf, 0, sizeof(buf));
     usleep(0.5);
 
-    //////////////////일단 은 클라이언트에서 다운로드만
-    ///되게...///////////////////
+    //////////////////클라이언트에서 다운로드만
+   
     if ((dir = opendir("/home/mobis/Public/Server/")) != nullptr) {
       while ((diread = readdir(dir)) != nullptr) {
         // cout << "diread->d_name : " << diread->d_name << endl;
         if (strcmp(diread->d_name, ".") != 0) {
           if (strcmp(diread->d_name, "..") != 0) {
             files.push_back(diread->d_name);
-            f_manager.add_file(
-                new myfile(diread->d_name, ++file_no, "1234", 900));
+            stat(diread->d_name, &sb);
+            f_manager.add_file(new myfile(diread->d_name, ++file_no, "1234", sb.st_size));
           }
         }
       }
@@ -87,10 +90,11 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
     // }
 
     ////////////////////////////////////////////////////////////////////////////////////////
-
+    
     for (int m = 0; m < f_manager.get_file_cnt(); m++) {
-      temp.clear();
       memset(buf, 0, sizeof(buf));
+      
+      temp.clear();
       temp = temp + "   ";
       temp = temp + to_string(f_manager.get_file_postno(m));
       temp = temp + "                       ";
@@ -99,12 +103,12 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
       temp = temp + to_string(f_manager.get_file_size_(m));
       strcpy(buf, temp.c_str());
       buf[temp.size()] = '\n';
+      //sprintf(buf, "%-10d          %-25s          %-10d", f_manager.get_file_postno(m), f_manager.get_file_title(m), f_manager.get_file_size_(m));
       send(sd, buf, strlen(buf), 0);
       usleep(0.5);
     }
     sprintf(buf, "%s",
-            "=================================================================="
-            "==========\n");
+            "==================== S E R V E R    F O L D E R =====================\n");
     send(sd, buf, strlen(buf), 0);
     usleep(0.5);
     sprintf(buf, "%s", "[0]. 새로고침\n");
@@ -128,10 +132,12 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
     switch (a) {
 
     case 0:
+      memset(buf, 0, sizeof(buf));
       sprintf(buf, "%s", "WINDOW");
       send(sd, buf, strlen(buf), 0);
-      file_no = 0;
       usleep(0.5);
+      file_no = 0;
+      
       break;
 
     case 1: //파일 다운로드
@@ -174,14 +180,41 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
       memset(buf, 0, sizeof(buf));
       fsrc.read(buf, 1024);
       send(sd, buf, 1024, 0);
+      sleep(2);
       fsrc.close();
-
+      usleep(0.5);
       file_no = 0;
       temp.clear();
+      memset(buf, 0, sizeof(buf));
+      sprintf(buf, "%s", "WINDOW");
+      send(sd, buf, strlen(buf), 0);
+      usleep(0.5);
     } break;
 
     case 2: //파일 업로드
+      {sprintf(buf, "%s", "UPLOAD");
+      send(sd, buf, strlen(buf), 0);
+      usleep(0.5);
+      //클라이언트에서 업로드 모드 
+      memset(buf, 0, sizeof(buf));
+      
+      cout << "check p1" << endl;
+      n = recv(sd, recv_buf, sizeof(recv_buf), 0); //파일이름이 클라이언트에서 넘어옴
+      temp.clear();
+      cout << "check p2" << endl;
+      temp = recv_buf; //temp 에 파일이름이 임시저장
+      cout << "temp : " << temp << endl;
+      //file_add = "/home/mobis/Public/Client/";
+      temp = addr + "_copy_from_client_" + temp;
 
+      ofstream fdest(temp, ios::out | ios::binary);
+      memset(recv_buf,0,sizeof(recv_buf));
+            
+      //n = recv(sd, recv_buf, 1024, 0);
+      fdest.write(recv_buf,n);
+      fdest.close();
+      memset(recv_buf,0,sizeof(1024));
+      }
       break;
 
     case 3: //파일 삭제
@@ -236,6 +269,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
     }
     usleep(0.5);
     memset(recv_buf, 0, sizeof(recv_buf));
+    
   }
 
   // string add = "/home/mobis/Public/";

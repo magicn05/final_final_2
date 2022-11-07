@@ -10,9 +10,21 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>
+#include <time.h>
+#include <stdio.h>
 using namespace std;
 
-int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data) {
+int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data, user &now_user) {
+  char buf_date[30];
+  string buf_date_str;
+	time_t ct;
+	struct tm tm;
+	ct = time(NULL);
+	tm = *localtime(&ct);
+	sprintf(buf_date,"%04d-%02d-%02d %02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,tm.tm_hour, tm.tm_min);
+  buf_date_str = buf_date;
+  
+  
   //cout << temp_data->get_contents() << endl;
   string temp, reply_temp;
   char buf[1024];
@@ -141,7 +153,7 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data)
       memset(recv_buf,0,sizeof(recv_buf));
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);
       temp = recv_buf;
-      d_manager.data_list[no]->add_reply(new reply(temp, "writer", "2022-11-07"));
+      d_manager.data_list[no]->add_reply(new reply(temp, now_user.get_userid(), buf_date_str));
       temp.clear();
       usleep(0.5);
       break;

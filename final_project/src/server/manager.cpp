@@ -61,6 +61,7 @@ int user_Manager::check_login(string id, string pin){
 
 data_Manager::data_Manager(){
    int data_cnt = 0;
+   int data_no = 10;
 }
 
 data_Manager::~data_Manager(){
@@ -70,6 +71,7 @@ data_Manager::~data_Manager(){
 void data_Manager::add_data(data *new_data) {
   data_list.push_back(new_data);
   data_cnt++;
+  data_no++;
 }
 
 string data_Manager::get_data_title(int n) { return data_list[n]->get_title(); }
@@ -114,6 +116,10 @@ file_Manager::~file_Manager(){
 void file_Manager::add_file(myfile* myfile){
   file_list.push_back(myfile);
   file_cnt++;
+}
+
+int data_Manager::get_data_no(){
+  return data_no;
 }
 
 int file_Manager::get_file_cnt(){

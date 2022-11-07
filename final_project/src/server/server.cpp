@@ -34,8 +34,8 @@ using namespace std;
 
 pthread_mutex_t mutx;
 
-int start_menu(int sd);
-int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx);
+int start_menu(int sd, user &now_user);
+int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user& now_user);
 int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
              int &f_no);
 
@@ -51,6 +51,7 @@ user_Manager u_manager;
 data_Manager d_manager;
 file_Manager f_manager;
 
+
 class Server_Manager {
 public:
   struct sockaddr_in server_addr;
@@ -64,9 +65,10 @@ public:
 
 void thread_function(int sd) {
   // load users
+  user now_user;
   int n;
   int a;
-  int res = start_menu(sd); // 1번 , 2번의 선택..
+  int res = start_menu(sd, now_user); // 1번 , 2번의 선택..
   int end_flag = 0;
   char buf[1024];
   char recv_buf[1024];
@@ -102,7 +104,7 @@ void thread_function(int sd) {
       a = atoi(recv_buf);
       switch (a) {
       case 1: //게시판
-        board(sd, d_manager, mutx);
+        board(sd, d_manager, mutx, now_user);
         break;
       case 2: //자료실
         download(sd, d_manager, f_manager, f_no);
@@ -202,12 +204,18 @@ void handler(int signo){
     boost::archive::text_oarchive user_oa(user_ofs);
     user_oa << u_manager;
   }
-  cout << 3 << endl;
-  sleep(1);
-  cout << 2 << endl;
-  sleep(1);
-  cout << 1 << endl;
-  sleep(1);
+
+  ofstream board_ofs("board_contents.txt");
+  {
+    boost::archive::text_oarchive board_oa(board_ofs);
+    board_oa << d_manager;
+  }
+  cout << "good bye" << endl;
+  //sleep(1);
+  //cout << 2 << endl;
+  //sleep(1);
+  //cout << 1 << endl;
+  //sleep(1);
   exit(1);
 }
 
@@ -232,26 +240,40 @@ int main() {
         // archive and stream closed when destructors are called
   }
 
-  d_manager.add_data(
-      new data("Book1", "2010-09-10", "apple", "1234",
-               "hello my name is yeppi-yeppi-yo\n hello my name is "
-               "yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n hello my "
-               "name is yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n ",
-               1));
-  d_manager.add_data(
-      new data("Book6", "2012-09-10", "apple", "1234",
-               "hello my name is yeppi-yeppi-yo\n hello my name is "
-               "yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n hello my "
-               "name is yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n ",
-               2));
-  d_manager.add_data(new data("Book3", "2011-09-10", "apple", "1234",
-                              "hello my name is yeppi-yeppi-yo", 13));
-  d_manager.add_data(new data("Book6", "2011-09-10", "banana", "1234",
-                              "hello my name is yeppi-yeppi-yo", 4));
-  d_manager.add_data(new data("Book3", "2011-09-10", "david", "1234",
-                              "hello my name is yeppi-yeppi-yo", 55));
-  d_manager.add_data(new data("Book6", "2011-09-10", "charles", "1234",
-                              "hello my name is yeppi-yeppi-yo", 61));
+  // d_manager.add_data(
+  //     new data("Book1", "2010-09-10", "apple", "1234",
+  //              "hello my name is yeppi-yeppi-yo\n hello my name is "
+  //              "yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n hello my "
+  //              "name is yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n ",
+  //              0));
+  // d_manager.add_data(
+  //     new data("Book6", "2012-09-10", "apple", "1234",
+  //              "hello my name is yeppi-yeppi-yo\n hello my name is "
+  //              "yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n hello my "
+  //              "name is yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n ",
+  //              1));
+  // d_manager.add_data(new data("Book3", "2011-09-10", "apple", "1234",
+  //                             "hello my name is yeppi-yeppi-yo", 2));
+  // d_manager.add_data(new data("Book6", "2011-09-10", "banana", "1234",
+  //                             "hello my name is yeppi-yeppi-yo", 3));
+  // d_manager.add_data(new data("Book3", "2011-09-10", "david", "1234",
+  //                             "hello my name is yeppi-yeppi-yo", 4));
+  // d_manager.add_data(new data("Book6", "2011-09-10", "charles", "1234",
+  //                             "hello my name is yeppi-yeppi-yo", 5));
+
+
+
+  {
+        // create and open an archive for input
+        std::ifstream board_ifs("board_contents.txt");
+        
+        boost::archive::text_iarchive board_ia(board_ifs);
+        // read class state from archive
+        board_ia >> d_manager;
+        //ia_temp >> newg_temp;
+        // archive and stream closed when destructors are called
+  }
+
 
   int choice;
   int sockfd, new_fd, state;
@@ -285,7 +307,7 @@ int main() {
   close(sockfd);
 }
 
-int start_menu(int sd) {
+int start_menu(int sd, user &now_user) {
   string id, name, pin, phone_num;
 
   char buf[1024];
@@ -320,27 +342,37 @@ int start_menu(int sd) {
       usleep(0.5);
       sprintf(buf, "%s", "로그인 페이지 입니다. \n\n");
       send(sd, buf, strlen(buf), 0);
-
+      usleep(0.5);
       sprintf(buf, "%s", "ID  >> ");
       send(sd, buf, strlen(buf), 0);
       usleep(0.5);
       memset(recv_buf, 0, sizeof(recv_buf));
+      sprintf(buf, "%s", "LOGIN");
+      send(sd, buf, strlen(buf), 0);
+      sleep(1);
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);
       usleep(0.5);
       id = recv_buf;
       memset(recv_buf, 0, sizeof(recv_buf));
       usleep(0.5);
+      
       sprintf(buf, "%s", "PIN >> ");
       send(sd, buf, strlen(buf), 0);
       usleep(0.5);
+
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);
       pin = recv_buf;
+      cout << "recv_buf : " << recv_buf << endl;
+      usleep(0.5);
       memset(recv_buf, 0, sizeof(recv_buf));
-
+      cout << "id" << id << endl;
+      cout << "pin" << pin << endl;
       if (u_manager.check_login(id, pin) == 0) {
         sprintf(buf, "%s", "Log-in Succeed \n\n");
         send(sd, buf, strlen(buf), 0);
         usleep(0.5);
+        now_user.set_userid(id);
+        now_user.set_userpin(pin);
         end_flag = 1;
         out_flag = 1;
 

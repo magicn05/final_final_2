@@ -4,6 +4,11 @@
 #include <iostream>
 #include <vector>
 #include "reply.h"
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+
 using namespace std;
 
 class data{
@@ -15,7 +20,20 @@ class data{
   string data_date; //reply
   string data_owner; //reply
   
-  
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        // serialize base class information
+        ar & contents;
+        ar & data_passwd;
+        ar & postno;
+        ar & data_title;
+        ar & data_date;
+        ar & data_owner;
+        ar & reply_list;
+    }
+
   public:
   vector<reply*> reply_list;
   data();

@@ -6,11 +6,26 @@
 #include "reply.h"
 #include <string>
 #include <vector>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+
 using namespace std;
 
 class data_Manager{
 private:
   int data_cnt;
+  int data_no;
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        // serialize base class information
+        ar & data_cnt;
+        ar & data_no;
+        ar & data_list;
+    }
 public:
   vector<data*> data_list;
   data_Manager();
@@ -26,6 +41,7 @@ public:
   int get_data_postno(int n);
   void put_data_reply(int n, reply* reply_);
   void down_data_cnt();
+  int get_data_no();
   
   
 };

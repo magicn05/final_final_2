@@ -32,6 +32,10 @@ public:
   string get_userpin();
   string get_userName();
   string get_userPhone();
+  void set_userid(string user_id);
+  void set_userpin(string user_pin);
+  void set_userName(string user_Name);
+  void set_userPhone(string user_Phone);
 };
 
 #endif
