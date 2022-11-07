@@ -18,7 +18,7 @@ public:
   int get_file_postno(int i);
   string get_file_title(int i);
   string get_file_passwd(int i);
-  int get_file_size_(int i);
+  off_t get_file_size_(int i);
   void list_clear();
   
 };

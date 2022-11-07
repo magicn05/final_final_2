@@ -10,7 +10,7 @@ myfile::myfile(){
   this->file_size = 999;
 }
 
-myfile::myfile(string file_name, int file_no, string file_pin, long long int file_size){
+myfile::myfile(string file_name, int file_no, string file_pin, off_t file_size){
   this->file_name = file_name;
   this->file_no = file_no;
   this->file_pin = file_pin;
@@ -33,6 +33,6 @@ string myfile::get_file_pin(){
   return this->file_pin;
 }
 
-long long int myfile::get_file_size(){
+off_t myfile::get_file_size(){
   return this->file_size;
 }

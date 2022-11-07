@@ -19,7 +19,9 @@ int text_reader(int sd, int n, data_Manager &d_manager, data* temp_data, user &n
 int text_writer(int sd, data_Manager &d_manager, user&now_user);
 
 int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user &now_user) {
-  
+  char printbuf[100];
+  char printbuf2[100];
+  char printbuf3[100];
   char buf_date[30];
   string buf_date_str;
 	time_t ct;
@@ -49,18 +51,20 @@ int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user &now_user
     sprintf(buf, "%s", "게시판입니다. 여러분의 의견을 공유해주세요. \n\n\n");
     send(sd, buf, strlen(buf), 0);
     usleep(0.5);
+    if(search_flag != 1){
     sprintf(buf, "                            %d %s %d %s", current_page, "page of ", board_page, "pages\n");
     send(sd, buf, strlen(buf), 0);
+    }
     sprintf(buf, "%s",
-            "=================================================================================\n");
+            "=========================================================================================\n");
     send(sd, buf, strlen(buf), 0);
     
     sprintf(buf, "%s",
-            " [Post No.]                 [TITLE]               [WRITER]       [DATE]      \n");
+            " [Post No.]         [TITLE]                     [WRITER]                  [DATE]      \n");
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s",
             "=================================================================="
-            "===============\n");
+            "=======================\n");
     send(sd, buf, strlen(buf), 0);
     usleep(0.5);
     if(search_flag == 0){
@@ -69,20 +73,28 @@ int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user &now_user
           for (int i = (d_manager.get_data_cnt() - ((current_page-1)*10)); i >= (d_manager.get_data_cnt() - ((current_page-1)*10) - 9) ; i--)
           {
             memset(buf, 0, sizeof(buf));
-            temp = temp + "   ";
-            temp = temp + to_string(d_manager.get_data_postno(i-1));
-            temp = temp + "                  ";
-            temp = temp + d_manager.get_data_title(i-1);
-            temp = temp + "                       ";
-            temp = temp + d_manager.get_data_owner(i-1);
-            temp = temp + "        ";
-            temp = temp + d_manager.get_data_date(i-1);
-            strcpy(buf, temp.c_str());
-            buf[temp.size()] = '\n';
+            strcpy(printbuf,d_manager.get_data_title(i-1).c_str());
+            strcpy(printbuf2,d_manager.get_data_owner(i-1).c_str());
+            strcpy(printbuf3,d_manager.get_data_date(i-1).c_str());
+            sprintf(buf, "   %-5d           %-40s %-15s    %-20s\n", d_manager.get_data_postno(i-1), printbuf, printbuf2, printbuf3);  
+            // cout << buf;
+            // usleep(0.5);            
+            
+            // memset(buf, 0, sizeof(buf));
+            // //temp = temp + "   ";
+            // temp = temp + to_string(d_manager.get_data_postno(i-1));
+            // temp = temp + "                  ";
+            // temp = temp + d_manager.get_data_title(i-1);
+            // temp = temp + "                       ";
+            // temp = temp + d_manager.get_data_owner(i-1);
+            // temp = temp + "        ";
+            // temp = temp + d_manager.get_data_date(i-1);
+            // strcpy(buf, temp.c_str());
+            // buf[temp.size()] = '\n';
             send(sd, buf, strlen(buf), 0);
             usleep(0.5);
             
-            temp.clear();
+            // temp.clear();
           }
           //for (int i = 0; i <= 12; i++)
           // for (int i = 12; i >= 0; i--)
@@ -106,21 +118,28 @@ int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user &now_user
          }
       else if (current_page == board_page){
          for (int i = d_manager.get_data_cnt() - ((current_page-1)*10); i >= 0 ; i--)
-          {memset(buf, 0, sizeof(buf));
-            temp = temp + "   ";
-           temp = temp + to_string(d_manager.get_data_postno(i));
-           temp = temp + "                  ";
-           temp = temp + d_manager.get_data_title(i);
-            temp = temp + "                       ";
-           temp = temp + d_manager.get_data_owner(i);
-           temp = temp + "        ";
-           temp = temp + d_manager.get_data_date(i);
-           // cout << "temp : " << temp << endl;
-           strcpy(buf, temp.c_str());
-           buf[temp.size()] = '\n';
-           send(sd, buf, strlen(buf), 0);
-           usleep(0.5);
-           temp.clear(); }
+          {
+            memset(buf, 0, sizeof(buf));
+            strcpy(printbuf,d_manager.get_data_title(i).c_str());
+            strcpy(printbuf2,d_manager.get_data_owner(i).c_str());
+            strcpy(printbuf3,d_manager.get_data_date(i).c_str());
+            sprintf(buf, "     %-5d %-40s  %-20s    %-20s\n", d_manager.get_data_postno(i), printbuf, printbuf2, printbuf3);  
+          //   memset(buf, 0, sizeof(buf));
+          //   temp = temp + "   ";
+          //  temp = temp + to_string(d_manager.get_data_postno(i));
+          //  temp = temp + "                  ";
+          //  temp = temp + d_manager.get_data_title(i);
+          //   temp = temp + "                       ";
+          //  temp = temp + d_manager.get_data_owner(i);
+          //  temp = temp + "        ";
+          //  temp = temp + d_manager.get_data_date(i);
+          //  // cout << "temp : " << temp << endl;
+          //  strcpy(buf, temp.c_str());
+          //  buf[temp.size()] = '\n';
+            send(sd, buf, strlen(buf), 0);
+            usleep(0.5);
+          //  temp.clear(); 
+           }
         } 
       }
 
@@ -129,27 +148,33 @@ int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user &now_user
       sprintf(buf, "%s", "현재창에는 검색하신 결과만 나타납니다. \n");
       send(sd, buf, strlen(buf), 0);
 
-      for (int i = 0; i < searched_index.size(); i++) {
-      memset(buf, 0, sizeof(buf));
-      temp = temp + "   ";
-      temp = temp + to_string(d_manager.get_data_postno(searched_index[i]));
-      temp = temp + "                  ";
-      temp = temp + d_manager.get_data_title(searched_index[i]);
-      temp = temp + "                       ";
-      temp = temp + d_manager.get_data_owner(searched_index[i]);
-      temp = temp + "        ";
-      temp = temp + d_manager.get_data_date(searched_index[i]);
+      for (int i = 0; i < searched_index.size(); i++) 
+      {
+        memset(buf, 0, sizeof(buf));
+        strcpy(printbuf,d_manager.get_data_title(searched_index[i]).c_str());
+        strcpy(printbuf2,d_manager.get_data_owner(searched_index[i]).c_str());
+        strcpy(printbuf3,d_manager.get_data_date(searched_index[i]).c_str());
+        sprintf(buf, "     %-10d    %-30s%-20s    %-20s\n", d_manager.get_data_postno(searched_index[i]), printbuf, printbuf2, printbuf3);  
+      // memset(buf, 0, sizeof(buf));
+      // temp = temp + "   ";
+      // temp = temp + to_string(d_manager.get_data_postno(searched_index[i]));
+      // temp = temp + "                  ";
+      // temp = temp + d_manager.get_data_title(searched_index[i]);
+      // temp = temp + "                       ";
+      // temp = temp + d_manager.get_data_owner(searched_index[i]);
+      // temp = temp + "        ";
+      // temp = temp + d_manager.get_data_date(searched_index[i]);
       //cout << "temp : " << temp << endl;
-        strcpy(buf, temp.c_str());
-        buf[temp.size()] = '\n';
+        // strcpy(buf, temp.c_str());
+        // buf[temp.size()] = '\n';
        send(sd, buf, strlen(buf), 0);
        usleep(0.5);
-       temp.clear();
+      //  temp.clear();
       }
     }
     sprintf(buf, "%s",
             "=================================================================="
-            "===============\n");
+            "=======================\n");
     send(sd, buf, strlen(buf), 0);
     usleep(0.5);
     sprintf(buf, "%s", "[0]. 새로고침\n");
