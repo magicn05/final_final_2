@@ -1,0 +1,6 @@
+bin
+lib
+src/*/*.o
+src/*/*.so
+src/client/client
+src/server/server
