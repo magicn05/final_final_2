@@ -20,6 +20,8 @@
 #include <dirent.h>
 #include <error.h>
 #include <vector>
+#include <time.h>
+#include <algorithm>
 #define CR '\012' //개행, 역슬레시 + n
 #define MAX_DATA_SIZE 2048
 
@@ -28,21 +30,24 @@ pthread_t tid1, tid2;
 int check_flag = 0;
 int upload_flag = 0;
 int file_no = 0;
+
 class myfile{
 private:
   string file_name;
   int file_no;
   string file_pin;
   off_t file_size;
+  string file_mtime;
 public:
   myfile();
-  myfile(string, int, string, off_t);
+  myfile(string, int, string, off_t, string);
   ~myfile();
 
   string get_file_name();
   int get_file_no();
   string get_file_pin();
   off_t get_file_size();
+  string get_file_time();
 };
 
 class file_Manager{
@@ -58,8 +63,8 @@ public:
   string get_file_title(int i);
   string get_file_passwd(int i);
   off_t get_file_size_(int i);
-  void list_clear();
-  
+  string get_file_time_(int i);
+  void list_clear();  
 };
 
 myfile::myfile(){
@@ -69,11 +74,12 @@ myfile::myfile(){
   this->file_size = 999;
 }
 
-myfile::myfile(string file_name, int file_no, string file_pin, off_t file_size){
+myfile::myfile(string file_name, int file_no, string file_pin, off_t file_size, string file_mtime){
   this->file_name = file_name;
   this->file_no = file_no;
   this->file_pin = file_pin;
   this->file_size = file_size;
+  this->file_mtime = file_mtime;
 }
 
 myfile::~myfile(){
@@ -96,6 +102,9 @@ off_t myfile::get_file_size(){
   return this->file_size;
 }
 
+string myfile::get_file_time(){
+  return this->file_mtime;
+}
 
 file_Manager::file_Manager(){
   file_cnt = 0;
@@ -112,6 +121,10 @@ void file_Manager::add_file(myfile* myfile){
 
 int file_Manager::get_file_cnt(){
   return file_cnt;
+}
+
+string file_Manager::get_file_time_(int i){
+  return file_list[i]->get_file_time();
 }
 
 int file_Manager::get_file_postno(int i){
@@ -134,13 +147,13 @@ void file_Manager::list_clear(){
   file_list.clear();
   file_cnt = 0;
   file_no = 0;
-
-
 }
 
+bool cmp(myfile* a, myfile* b) { 
+	return a->get_file_time() > b->get_file_time();
+} 
+
 file_Manager f_manager;
-
-
 void *recv_thread(void *arg) {
   FILE* fp = NULL;
   string file_add;
@@ -156,6 +169,10 @@ void *recv_thread(void *arg) {
   struct dirent *diread;
   char ch;
   struct stat sb;
+  struct tm* ts;
+  string time_stamp;
+  char printbuf2[100];
+
   while (1) {
     n = recv(new_fd, recv_msg, MAX_DATA_SIZE, 0);
     if (n<=0){
@@ -206,7 +223,11 @@ void *recv_thread(void *arg) {
               strcpy(buf,c_temp.c_str());
               //char* ctemp = strcat("/home/mobis/Public/Client/", diread->d_name);
               stat(buf, &sb);
-              f_manager.add_file(new myfile(diread->d_name, ++file_no, "1234", sb.st_size));
+              time_t now = sb.st_mtime;
+              ts = localtime(&now);
+              strftime(printbuf2, sizeof(printbuf2), "%Y-%m-%d %H:%M", ts);
+              time_stamp = printbuf2;
+              f_manager.add_file(new myfile(diread->d_name, ++file_no, "1234", sb.st_size,time_stamp));
             }
           }
         }
@@ -215,26 +236,21 @@ void *recv_thread(void *arg) {
         perror("opendir");
         return 0;
       }
-    cout << "====================== C L I E N T     F O L D E R =========================\n";
-    cout << " [File No.]                 [FILE NAME]                    [Size in Byte]\n";
-    cout << "============================================================================\n";
-
+    cout << "                                    C L I E N T     F O L D E R                              \n";
+    cout << "=============================================================================================\n";
+    cout << " [File ID.]        [FILE NAME]                      [Size in Byte]          [Date] \n";
+    cout << "=============================================================================================\n";
+    sort(f_manager.file_list.begin(), f_manager.file_list.end(), cmp);
     for (int m = 0; m < f_manager.get_file_cnt(); m++) {
       memset(buf, 0, sizeof(buf));
       strcpy(printbuf,f_manager.get_file_title(m).c_str());
-      sprintf(buf, "      %-10d           %-30s     %-30ld\n", f_manager.get_file_postno(m), printbuf, f_manager.get_file_size_(m));  
+      strcpy(printbuf2,f_manager.get_file_time_(m).c_str());
+      sprintf(buf, "      %-10d %-29s          %-15ld%-10s\n", f_manager.get_file_postno(m), printbuf, f_manager.get_file_size_(m),printbuf2);  
       cout << buf;
       usleep(0.5);            
-      // temp = temp + to_string(f_manager.get_file_postno(m));
-      // temp = temp + "                       ";
-      // temp = temp + f_manager.get_file_title(m);
-      // temp = temp + "                   ";
-      // temp = temp + to_string(f_manager.get_file_size_(m));
-      // cout << temp << endl;
-      // //sprintf(buf, "%-10d          %-25s          %-10d", f_manager.get_file_postno(m), f_manager.get_file_title(m), f_manager.get_file_size_(m));
-      // temp.clear();
+
       }
-      cout << "============================================================================\n";
+      cout << "=============================================================================================\n";
     }
 
     else

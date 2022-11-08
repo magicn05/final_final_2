@@ -29,13 +29,12 @@ int text_writer(int sd, data_Manager & d_manager, user& now_user){
   string my_title;
   string my_contents;
    
-    sprintf(buf, "%s", "글 제목을 입력하세요 >> ");
+    sprintf(buf, "%s", " └ 글 제목을 입력하세요. (최대 80자) >> ");
     send(sd, buf, strlen(buf), 0);
     n = recv(sd, recv_buf, sizeof(recv_buf), 0);
     my_title = recv_buf;
     memset(recv_buf,0,sizeof(recv_buf));
-
-    sprintf(buf, "%s", "글 내용을 입력하세요. \n");
+    sprintf(buf, "%s", " └ 글 내용을 입력하세요.(최대 500자) >> ");
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s", ">> ");
     send(sd, buf, strlen(buf), 0);
@@ -44,7 +43,7 @@ int text_writer(int sd, data_Manager & d_manager, user& now_user){
     my_contents = recv_buf;
     memset(recv_buf,0,sizeof(recv_buf));
 
-    sprintf(buf, "%s", "글을 게시하시겠습니까? [Y/n] ");
+    sprintf(buf, "%s", " └ 글을 게시하시겠습니까? [Y/n] ");
     send(sd, buf, strlen(buf), 0);
     n = recv(sd, recv_buf, sizeof(recv_buf), 0);
     string temp;

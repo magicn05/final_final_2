@@ -4,6 +4,7 @@
 #include "myfile.h"
 #include <string>
 #include <vector>
+#include <time.h>
 using namespace std;
 
 class file_Manager{
@@ -19,6 +20,7 @@ public:
   string get_file_title(int i);
   string get_file_passwd(int i);
   off_t get_file_size_(int i);
+  string get_file_time_(int i);
   void list_clear();
   
 };

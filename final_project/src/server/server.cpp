@@ -66,8 +66,8 @@ public:
 void thread_function(int sd) {
   // load users
   user now_user;
-  int n;
-  int a;
+  int n,a;
+  char printbuf[100];
   int res = start_menu(sd, now_user); // 1번 , 2번의 선택..
   int end_flag = 0;
   char buf[1024];
@@ -77,14 +77,13 @@ void thread_function(int sd) {
   else if (res == 1) { // 1번 : 게시판
     //여기서 게시판 , 자료실, 채팅방 선택
     // download(sd, d_manager, f_manager, f_no);
+    strcpy(printbuf,now_user.get_userid().c_str());
     while (end_flag != 1) {
       memset(buf, 0, sizeof(buf));
       sprintf(buf, "%s", "WINDOW");
       send(sd, buf, strlen(buf), 0);
-
       usleep(0.5);
-
-      sprintf(buf, "%s", "안녕하세요. 원하시는 메뉴를 선택해주세요 \n\n");
+      sprintf(buf, "%s%s", printbuf,"님 안녕하세요. 원하시는 메뉴를 선택해주세요 \n\n");
       send(sd, buf, strlen(buf), 0);
       memset(buf, 0, sizeof(buf));
 
@@ -98,6 +97,9 @@ void thread_function(int sd) {
       send(sd, buf, strlen(buf), 0);
       memset(buf, 0, sizeof(buf));
       sprintf(buf, "%s", " [4]. 로그아웃\n\n");
+      send(sd, buf, strlen(buf), 0);
+      memset(buf, 0, sizeof(buf));
+      sprintf(buf, "%s", " Input >> ");
       send(sd, buf, strlen(buf), 0);
       memset(buf, 0, sizeof(buf));
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);
@@ -345,6 +347,7 @@ int start_menu(int sd, user &now_user) {
       usleep(0.5);
       sprintf(buf, "%s", "ID  >> ");
       send(sd, buf, strlen(buf), 0);
+      memset(buf,0,sizeof(buf));
       usleep(0.5);
       memset(recv_buf, 0, sizeof(recv_buf));
       sprintf(buf, "%s", "LOGIN");

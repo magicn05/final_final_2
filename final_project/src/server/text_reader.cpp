@@ -25,7 +25,9 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
   buf_date_str = buf_date;
   
   
-  //cout << temp_data->get_contents() << endl;
+  char printbuf1[100];
+  char printbuf2[100];
+  char printbuf3[100];
   string temp, reply_temp;
   char buf[1024];
   char recv_buf[1024];
@@ -65,11 +67,12 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
     strcpy(buf, temp.c_str());
     send(sd, buf, strlen(buf), 0);
     memset(buf, 0, sizeof(buf));
-    sprintf(buf, "%s",
-            "=================================================================="
-            "===============\n");
+    // sprintf(buf, "%s",
+    //         "=================================================================="
+    //         "===============\n");
+    // 
+    // send(sd, buf, strlen(buf), 0);
     temp.clear();
-    send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s",
             "Written by : "); /////////////////////////// Written by
     send(sd, buf, strlen(buf), 0);
@@ -80,65 +83,66 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
     send(sd, buf, strlen(buf), 0);
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%s",
-            "=================================================================="
-            "===============\n\n");
+            "Posted  :         "); /////////////////////////// Posted by
+    send(sd, buf, strlen(buf), 0);
+    memset(buf,0,sizeof(buf));
+    strcpy(buf,d_manager.get_data_date(no).c_str());
+    send(sd, buf, strlen(buf), 0);
+    memset(buf,0,sizeof(buf));
+    sprintf(buf, "%s", "\n");
+    send(sd, buf, strlen(buf), 0);
+    sprintf(buf, "%s", "=================================================================================\n\n");
     send(sd, buf, strlen(buf), 0);
     temp.clear();
 
     temp = d_manager.get_data_contents(no);
     temp = temp + '\n';
     temp = temp + '\n';
-    //buf[temp.size()] = '\n';
-    //buf[temp.size()] = '\n';
     
     strcpy(buf, temp.c_str());
     send(sd, buf, strlen(buf), 0); //////////////////////////// Contents
     memset(buf, 0, sizeof(buf));
-    sprintf(buf, "%s",
-            "=================================================================="
-            "===============\n");
+    sprintf(buf, "%s", "=================================================================================\n");
     send(sd, buf, strlen(buf), 0);
     temp.clear();
     sprintf(buf, "%s", "Replies \n"); ///////////////////////////// Replies
     send(sd, buf, strlen(buf), 0);
     usleep(0.5);
+    sprintf(buf, "%s",
+            " [No.]     [COMMENT]                               [WRITER]       [DATE]      \n");
+    send(sd, buf, strlen(buf), 0);
 
-    cout << "temp_data cnt : " << temp_data->reply_list.size() << endl;
+    //cout << "temp_data cnt : " << temp_data->reply_list.size() << endl;
 
     for (int m=0; m<temp_data->reply_list.size(); m++){
-      reply_temp = "  ";
-      reply_temp = reply_temp + to_string(m+1);
-      reply_temp = reply_temp + "    ";
-      reply_temp = reply_temp + temp_data->get_reply_title(m);
-      reply_temp = reply_temp + "    ";
-      reply_temp = reply_temp + temp_data->get_reply_owner(m);
-      reply_temp = reply_temp + "    ";
-      reply_temp = reply_temp + temp_data->get_reply_date(m);
-      reply_temp = reply_temp + '\n';
-      //cout << "reply : " << reply_temp << endl;
-      
-      strcpy(buf, reply_temp.c_str());
+      strcpy(printbuf1,temp_data->get_reply_title(m).c_str());
+      strcpy(printbuf2,temp_data->get_reply_owner(m).c_str());
+      strcpy(printbuf3,temp_data->get_reply_date(m).c_str());
+      sprintf(buf, "   %-5d   %-40s  %-10s  %-20s\n", m+1, printbuf1, printbuf2, printbuf3);
       send(sd, buf, strlen(buf), 0);
       memset(buf, 0, sizeof(buf));
-      reply_temp.clear();
     }
     sprintf(buf, "%s",
             "=================================================================="
             "===============\n\n");
     send(sd, buf, strlen(buf), 0);
     usleep(0.5);
-    sprintf(buf, "%s", "[1]. 추천하기\n");
+    sprintf(buf, "%s", " [1]. 추천하기\n");
     send(sd, buf, strlen(buf), 0);
-    sprintf(buf, "%s", "[2]. 댓글달기\n");
+    sprintf(buf, "%s", " [2]. 댓글달기\n");
     send(sd, buf, strlen(buf), 0);
-    sprintf(buf, "%s", "[3]. 돌아가기\n");
+    sprintf(buf, "%s", " [3]. 돌아가기\n\n");
     send(sd, buf, strlen(buf), 0);
+    memset(buf,0,sizeof(buf));
+    sprintf(buf, "%s", " Input >> ");
+    send(sd, buf, strlen(buf), 0);
+    memset(buf, 0, sizeof(buf));
     usleep(0.5);
     n = recv(sd, recv_buf, sizeof(recv_buf), 0);
     a = atoi(recv_buf);
     switch (a) {
     case 1: //추천하기
-      sprintf(buf, "%s", "추천하였습니다.");
+      sprintf(buf, "%s", " 추천하였습니다.");
       send(sd, buf, strlen(buf), 0);
       sleep(2);
       sprintf(buf, "%s", "WINDOW");
@@ -148,7 +152,7 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
 
     case 2: //댓글 작성
       temp.clear();
-      sprintf(buf, "%s", "댓글을 입력하세요 >> ");
+      sprintf(buf, "%s", " └ 댓글을 입력하세요 >> ");
       send(sd, buf, strlen(buf), 0);
       memset(recv_buf,0,sizeof(recv_buf));
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);

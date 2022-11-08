@@ -138,8 +138,12 @@ string file_Manager::get_file_passwd(int i){
   return file_list[i]->get_file_pin();
 }
 
-int file_Manager::get_file_size_(int i){
+off_t file_Manager::get_file_size_(int i){
   return file_list[i]->get_file_size();
+}
+
+string file_Manager::get_file_time_(int i){
+  return file_list[i]->get_file_time();
 }
 
 void file_Manager::list_clear(){
