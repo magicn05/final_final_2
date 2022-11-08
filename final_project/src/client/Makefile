@@ -6,7 +6,7 @@ CXX = g++
 
 client: $(OBJS)
 	$(CXX) -o client $(OBJS) -lpthread
-
+		cp client ../../bin
 
 .cpp.o:
 	$(CXX) -c -g $<

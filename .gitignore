@@ -1,5 +1,3 @@
-bin
-lib
 src/*/*.o
 src/*/*.so
 src/client/client
