@@ -18,6 +18,7 @@
 #include <time.h>
 #include <string.h>
 #include <algorithm>
+#define MAX_DATA_SIZE 4028
 using namespace std;
 
 bool cmp(myfile* a, myfile* b) { 
@@ -30,8 +31,9 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
   FILE *fp;
   int fd;
   DIR *dir;
+  file_Manager f_manager_temp;
   char write_buf[2048];
-  char buf[1024];
+  char buf[4028];
   struct dirent *diread;
   vector<char *> files;
   int end_flag = 0;
@@ -39,7 +41,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
   string time_stamp;
   int a, n;
   int search_flag = 0;
-  char recv_buf[1024];
+  char recv_buf[4024];
   struct tm* ts;
   int file_no = 0;
   int select;
@@ -52,6 +54,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
   while (end_flag != 1) {
     file_no = 0;
     f_manager.list_clear();
+    f_manager_temp.list_clear();
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%s", "WINDOW");
     send(sd, buf, strlen(buf), 0);
@@ -93,7 +96,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
             ts = localtime(&now);
             strftime(printbuf2, sizeof(printbuf2), "%Y-%m-%d %H:%M", ts);
             time_stamp = printbuf2;
-            f_manager.add_file(new myfile(diread->d_name, ++file_no, "1234", sb.st_size, time_stamp));
+            f_manager_temp.add_file(new myfile(diread->d_name, ++file_no, "1234", sb.st_size, time_stamp));
             memset(printbuf2,0,sizeof(printbuf2));
           }
         }
@@ -103,6 +106,15 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       perror("opendir");
       return EXIT_FAILURE;
     }
+
+    
+    sort(f_manager_temp.file_list.begin(), f_manager_temp.file_list.end(), cmp);
+    
+    for (int p=0; p<f_manager_temp.get_file_cnt();p++){
+      f_manager.add_file(new myfile(f_manager_temp.file_list[p]->get_file_name(), p+1,"1234",f_manager_temp.file_list[p]->get_file_size(),f_manager_temp.file_list[p]->get_file_time()));
+    }
+    
+    
 
     if (search_flag == 1) ///////////////////////// 검색 후 출력
     {
@@ -121,7 +133,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
     
     else if (search_flag == 0) ////////////////// 일반 출력
     {
-      sort(f_manager.file_list.begin(), f_manager.file_list.end(), cmp);
+      //sort(f_manager.file_list.begin(), f_manager.file_list.end(), cmp);
       for (int m = 0; m < f_manager.get_file_cnt(); m++) {
       memset(buf, 0, sizeof(buf));
       strcpy(printbuf,f_manager.get_file_title(m).c_str());
@@ -145,8 +157,10 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s", " [3]. 파일삭제\n");
     send(sd, buf, strlen(buf), 0);
+    if (search_flag != 1){
     sprintf(buf, "%s", " [4]. 파일검색\n");
     send(sd, buf, strlen(buf), 0);
+    }
     if (search_flag == 1){
     sprintf(buf, "%s", " [5]. 검색모드해제◀\n");
     send(sd, buf, strlen(buf), 0);
@@ -182,6 +196,12 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
         sleep(3);
         break;
       }
+      else if (a <= 0){
+        sprintf(buf, "%s", " Error :: 파일 ID를 재확인 해주세요. ");
+        send(sd, buf, strlen(buf), 0);
+        sleep(3);
+        break;
+      }
       else {
       for (int t = 0; t < f_manager.get_file_cnt(); t++) {
         if ((f_manager.get_file_postno(t)) == a) {
@@ -203,14 +223,19 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       //////////////////////////////// 파일 이름 전달 종료
       temp = buf;
       addr = addr + temp;
-      cout << "addr : " << addr << endl; // addr = "/home/mobis/Public/test3.txt";
-      ifstream fsrc(addr, ios::in | ios::binary);
+      cout << "addr : " << addr << endl; // ex.) addr = "/home/mobis/Public/test3.txt";
+      sleep(8);
+      
+      ifstream fsrc(addr, ios::in | ios::binary | ios::ate ); // 데이터를 보낼 파일을 오픈 한다.
+      int f_size = fsrc.tellg();
+      cout << "file size : " << f_size << endl;
       if (!fsrc) {
         cout << "open error" << endl;
       }
       memset(buf, 0, sizeof(buf));
-      fsrc.read(buf, 1024);
-      send(sd, buf, 1024, 0);
+      
+      fsrc.read(buf, f_size);
+      send(sd, buf, f_size, 0);
       sleep(2);
       fsrc.close();
       usleep(0.5);
@@ -230,6 +255,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       sprintf(buf, "%s", "UPLOAD"); //클라이언트에서 업로드 모드
       send(sd, buf, strlen(buf), 0);
       usleep(0.5);
+      sleep(2);
       memset(buf, 0, sizeof(buf));
       sprintf(buf, "%s", " └ 내 자료실에 있는 파일을 확인하였나요? 계속진행? [Y/n] ");
       send(sd, buf, strlen(buf), 0);
@@ -238,13 +264,13 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       if (strcmp(recv_buf, "Y")!=0){
         break;
       }
-      else{
+      else{ ///////// 여기서 부터 client upload_flag 가 up
       temp.clear();
       memset(buf, 0, sizeof(buf));
       sprintf(buf, "%s", " └ 몇번 파일을 업로드 하시겠습니까? >> ");
       send(sd, buf, strlen(buf), 0);
       memset(recv_buf,0,sizeof(recv_buf));
-      n = recv(sd, recv_buf, sizeof(recv_buf),0);
+      n = recv(sd, recv_buf, sizeof(recv_buf),0); /// upload flag에 getline
       cout << "check p2" << endl;
       cout << "recv : " << recv_buf << endl; //file name 
       temp = recv_buf; // temp 에 파일이름이 임시저장
@@ -253,13 +279,17 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       // file_add = "/home/mobis/Public/Client/";
       temp = addr + "cp_" + temp;
       ofstream fdest(temp, ios::out | ios::binary); //temp 파일을 연다.
+
       memset(recv_buf, 0, sizeof(recv_buf));
-      n = recv(sd, recv_buf, 1024, 0);
+      cout << " New " << endl;
+      n = read(sd, recv_buf, MAX_DATA_SIZE); //클라이언트에서 데이터를 받음.
+      cout << "n : " << n << endl;
       fdest.write(recv_buf, n);
       fdest.close();
+
       temp.clear();
-      memset(recv_buf, 0, sizeof(1024));
-      memset(buf,0,sizeof(buf));
+      memset(recv_buf, 0, sizeof(recv_buf));
+      memset(buf, 0, sizeof(buf));
       sprintf(buf, " %s%s", printbuf, "을 서버자료실에 업로드 완료하였습니다. \n");
       send(sd, buf, strlen(buf), 0);
       f_name_temp = "cp_" + f_name_temp;
@@ -324,7 +354,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       send(sd, buf, strlen(buf), 0);
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);
       temp = recv_buf;
-      cout << "temp : " << temp << endl;
+      //sort(f_manager.file_list.begin(), f_manager.file_list.end(), cmp);
       for(int k=0; k<f_manager.get_file_cnt(); k++){
         size_t found = f_manager.get_file_title(k).find(temp);
           if (found!=string::npos){

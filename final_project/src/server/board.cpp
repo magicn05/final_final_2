@@ -128,8 +128,10 @@ int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user &now_user
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s", " [3]. 글 삭제\n");
     send(sd, buf, strlen(buf), 0);
+    if (search_flag != 1){
     sprintf(buf, "%s", " [4]. 글 검색\n");
     send(sd, buf, strlen(buf), 0);
+    }
     sprintf(buf, "%s", " [5]. 다음페이지로\n");
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s", " [6]. 이전페이지로\n");

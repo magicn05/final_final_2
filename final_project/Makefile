@@ -1,15 +1,12 @@
-all : server client libsrc
-
+all : server client
 server:
 	cd src/server; $(MAKE)
 
 client:
 	cd src/client; $(MAKE)
 
-libsrc:
-	cd src/libsrc; $(MAKE)
-
 clean:
-	cd src/server; rm *.o server
 	cd src/client; rm *.o client
-	cd src/libsrc; rm *.o lib*.so 
+	cd src/server; rm *.o *.so server
+	cd lib; rm *.so
+	cd bin; rm client server

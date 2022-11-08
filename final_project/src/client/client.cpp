@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <cstring>
 #include <string>
+#include <string.h>
 #include <fstream>
 #include <termio.h>
 #include <stdio.h>
@@ -23,7 +24,7 @@
 #include <time.h>
 #include <algorithm>
 #define CR '\012' //개행, 역슬레시 + n
-#define MAX_DATA_SIZE 2048
+#define MAX_DATA_SIZE 4028
 
 using namespace std;
 pthread_t tid1, tid2;
@@ -154,6 +155,7 @@ bool cmp(myfile* a, myfile* b) {
 } 
 
 file_Manager f_manager;
+file_Manager f_manager_temp;
 void *recv_thread(void *arg) {
   FILE* fp = NULL;
   string file_add;
@@ -184,8 +186,10 @@ void *recv_thread(void *arg) {
       cout << endl;
       system("clear");
     }
-    else if (strcmp(recv_msg, "LOGIN") == 0){
+    else if (strcmp(recv_msg, "LOGIN-") == 0){
       check_flag = 1;
+      memset(recv_msg,0,sizeof(recv_msg));
+      usleep(0.5);
     }
     else if (strcmp(recv_msg, "DOWNLOAD") == 0){ ///// 다운로드 준비 시작 /////
       cout << endl;
@@ -193,23 +197,25 @@ void *recv_thread(void *arg) {
       n = recv(new_fd, recv_msg, MAX_DATA_SIZE, 0);
       temp.clear();
       temp = recv_msg;
-      cout << "Down Load Original File Anme : " << temp << endl;
+      cout << " Down Load Original File Name : " << temp << endl;
       file_add = "/home/mobis/Public/Client/";
       file_add = file_add + "copy_" + temp;
       ofstream fdest(file_add, ios::out | ios::binary);
       memset(recv_msg,0,sizeof(recv_msg));
-      cout << "New File name : " << file_add << endl;
+      cout << " New File name : " << file_add << endl;
       //while(1){          
       n = recv(new_fd, recv_msg, MAX_DATA_SIZE, 0);
       fdest.write(recv_msg,n);
       fdest.close();
       memset(recv_msg,0,sizeof(MAX_DATA_SIZE));
-      cout << "Download Completed : " << file_add << endl;
+      cout << " Download Completed : " << file_add << endl;
       fflush(stdout);
   
     }
     else if (strcmp(recv_msg, "UPLOAD") == 0){ ///// 업로드 준비 시작 /////
       upload_flag = 1;
+      f_manager_temp.list_clear();
+      f_manager.list_clear();
       cout << endl;
       memset(recv_msg,0,sizeof(recv_msg));
       if ((dir = opendir("/home/mobis/Public/Client/")) != nullptr) {
@@ -227,7 +233,7 @@ void *recv_thread(void *arg) {
               ts = localtime(&now);
               strftime(printbuf2, sizeof(printbuf2), "%Y-%m-%d %H:%M", ts);
               time_stamp = printbuf2;
-              f_manager.add_file(new myfile(diread->d_name, ++file_no, "1234", sb.st_size,time_stamp));
+              f_manager_temp.add_file(new myfile(diread->d_name, ++file_no, "1234", sb.st_size,time_stamp));
             }
           }
         }
@@ -240,7 +246,13 @@ void *recv_thread(void *arg) {
     cout << "=============================================================================================\n";
     cout << " [File ID.]        [FILE NAME]                      [Size in Byte]          [Date] \n";
     cout << "=============================================================================================\n";
-    sort(f_manager.file_list.begin(), f_manager.file_list.end(), cmp);
+    sort(f_manager_temp.file_list.begin(), f_manager_temp.file_list.end(), cmp);
+    for (int p=0; p<f_manager_temp.get_file_cnt();p++){
+      f_manager.add_file(new myfile(f_manager_temp.file_list[p]->get_file_name(), p+1,"1234",f_manager_temp.file_list[p]->get_file_size(),f_manager_temp.file_list[p]->get_file_time()));
+    }
+
+
+
     for (int m = 0; m < f_manager.get_file_cnt(); m++) {
       memset(buf, 0, sizeof(buf));
       strcpy(printbuf,f_manager.get_file_title(m).c_str());
@@ -253,9 +265,8 @@ void *recv_thread(void *arg) {
       cout << "=============================================================================================\n";
     }
 
-    else
-      cout << recv_msg;
-      fflush(stdout);
+    else {cout << recv_msg;}
+    fflush(stdout);
   }
   pthread_cancel(tid2);
   pthread_cancel(tid1);
@@ -274,8 +285,8 @@ void *send_thread(void *arg) {
   struct stat sb;
   int file_no = 0;
   vector<char *> files;
-  char buf[1024];
-  char recv_msg[1024];
+  char buf[4048];
+  char recv_msg[4048];
   string temp;
   string file_add;
   char send_msg[MAX_DATA_SIZE];
@@ -315,7 +326,7 @@ void *send_thread(void *arg) {
       send(new_fd,send_msg,n,0);
       check_flag = 0;
     }
-    else if(upload_flag == 1){
+    else if(upload_flag == 1){ //클라이언트 폴더에서 서버로 전송.
       
       getline(cin, s);    // <--- 여기서 멈춰있네
       select = stoi(s);
@@ -323,18 +334,24 @@ void *send_thread(void *arg) {
       temp = f_manager.get_file_title(select);
       strcpy(send_msg,temp.c_str());
       send(new_fd, send_msg, sizeof(send_msg), 0);
-      sleep(1);
+//      sleep(1);
       file_add = "/home/mobis/Public/Client/";
       file_add = file_add + temp;
-      
-      ifstream fsrc(file_add, ios::in | ios::binary);
+      cout << "check point 1" << endl;
+      ifstream fsrc(file_add, ios::in | ios::binary | ios::ate);
+      int f_size = fsrc.tellg();
+      cout << "f_size : " << f_size << endl;
+  //    sleep(10);
       if (!fsrc) {
         cout << "open error" << endl;
+        exit(1);
       }
-      memset(buf, 0, sizeof(buf));
-      fsrc.read(buf, 1024);
-      send(new_fd, buf, 1024, 0);
-      usleep(0.5);
+      memset(send_msg, 0, sizeof(send_msg));
+      cout << "check point 2" << endl;
+      fsrc.read(send_msg, f_size);
+      n = send(new_fd, send_msg, f_size, 0);
+      cout << "send data : " << n << endl;
+      sleep(4);
       fsrc.close();
       usleep(0.5);
       temp.clear();

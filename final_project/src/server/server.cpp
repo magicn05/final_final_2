@@ -1,4 +1,3 @@
-#include "menu.h"
 #include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
@@ -28,7 +27,6 @@
 #include <boost/serialization/vector.hpp>
 #include <fstream>
 #include <iostream>
-#include <dlfcn.h>
 
 #define MAX_DATA_SIZE 1024
 using namespace std;
@@ -43,10 +41,6 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
 int f_no = 0;
 
 vector<int> client_no;
-void* handle1;
-void* handle2;
-void* handle3;
-
 
 struct sockaddr_in clientaddr;
 
@@ -236,11 +230,7 @@ int main() {
   signal(SIGINT, handler);
   pthread_mutex_init(&mutx, NULL);
   data a;
-
- // u_manager.add_user(new user("apple", "1234", "kim", "010-1111-2222"));
- // u_manager.add_user(new user("banana", "1234", "park", "010-2222-3333"));
- // u_manager.add_user(new user("charles", "1234", "lee", "010-2222-4444"));
-  
+ 
   {
         // create and open an archive for input
         std::ifstream user_ifs("userinfo.txt");
@@ -251,29 +241,6 @@ int main() {
         //ia_temp >> newg_temp;
         // archive and stream closed when destructors are called
   }
-
-  // d_manager.add_data(
-  //     new data("Book1", "2010-09-10", "apple", "1234",
-  //              "hello my name is yeppi-yeppi-yo\n hello my name is "
-  //              "yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n hello my "
-  //              "name is yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n ",
-  //              0));
-  // d_manager.add_data(
-  //     new data("Book6", "2012-09-10", "apple", "1234",
-  //              "hello my name is yeppi-yeppi-yo\n hello my name is "
-  //              "yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n hello my "
-  //              "name is yeppi-yeppi-yo\n hello my name is yeppi-yeppi-yo\n ",
-  //              1));
-  // d_manager.add_data(new data("Book3", "2011-09-10", "apple", "1234",
-  //                             "hello my name is yeppi-yeppi-yo", 2));
-  // d_manager.add_data(new data("Book6", "2011-09-10", "banana", "1234",
-  //                             "hello my name is yeppi-yeppi-yo", 3));
-  // d_manager.add_data(new data("Book3", "2011-09-10", "david", "1234",
-  //                             "hello my name is yeppi-yeppi-yo", 4));
-  // d_manager.add_data(new data("Book6", "2011-09-10", "charles", "1234",
-  //                             "hello my name is yeppi-yeppi-yo", 5));
-
-
 
   {
         // create and open an archive for input
@@ -286,11 +253,9 @@ int main() {
         // archive and stream closed when destructors are called
   }
 
-
   int choice;
   int sockfd, new_fd, state;
   socklen_t client_len;
-  // struct sockaddr_in clientaddr;
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   Server_Manager Server_Set;
   int reuseAddress = 1;
@@ -353,18 +318,18 @@ int start_menu(int sd, user &now_user) {
     case 1:
       sprintf(buf, "%s", "WINDOW");
       send(sd, buf, strlen(buf), 0);
-      usleep(0.5);
+      sleep(2);
       sprintf(buf, "%s", "로그인 페이지 입니다. \n\n");
       send(sd, buf, strlen(buf), 0);
-      usleep(0.5);
+      sleep(2);
       sprintf(buf, "%s", "ID  >> ");
       send(sd, buf, strlen(buf), 0);
       memset(buf,0,sizeof(buf));
-      usleep(0.5);
+      sleep(2);
       memset(recv_buf, 0, sizeof(recv_buf));
-      sprintf(buf, "%s", "LOGIN");
+      sprintf(buf, "%s", "LOGIN-");
       send(sd, buf, strlen(buf), 0);
-      sleep(1);
+      sleep(1); // delay 여기?????      
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);
       usleep(0.5);
       id = recv_buf;
