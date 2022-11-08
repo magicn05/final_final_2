@@ -28,6 +28,7 @@
 #include <boost/serialization/vector.hpp>
 #include <fstream>
 #include <iostream>
+#include <dlfcn.h>
 
 #define MAX_DATA_SIZE 1024
 using namespace std;
@@ -42,7 +43,9 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager,
 int f_no = 0;
 
 vector<int> client_no;
-
+void* handle1;
+void* handle2;
+void* handle3;
 
 
 struct sockaddr_in clientaddr;
@@ -218,10 +221,17 @@ void handler(int signo){
   //sleep(1);
   //cout << 1 << endl;
   //sleep(1);
+  // dlclose(handle1);
+  // dlclose(handle2);
+  // dlclose(handle3);
   exit(1);
 }
 
 int main() {
+  // handle1 = dlopen ("/home/mobis/final_final_2/final_project/lib/libmanager.so", RTLD_NOW);
+  // handle2 = dlopen ("/home/mobis/final_final_2/final_project/lib/libdownload.so", RTLD_NOW);
+  // handle3 = dlopen ("/home/mobis/final_final_2/final_project/lib/libboard.so", RTLD_NOW);
+
   cout << "S E R V E R          O N" << endl;
   signal(SIGINT, handler);
   pthread_mutex_init(&mutx, NULL);
