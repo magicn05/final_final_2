@@ -127,9 +127,11 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
             "===============\n\n");
     send(sd, buf, strlen(buf), 0);
     usleep(0.5);
-    sprintf(buf, "%s", " [1]. 추천하기\n");
+    // sprintf(buf, "%s", " []. 추천하기\n");
+    // send(sd, buf, strlen(buf), 0);
+    sprintf(buf, "%s", " [1]. 댓글달기\n");
     send(sd, buf, strlen(buf), 0);
-    sprintf(buf, "%s", " [2]. 댓글달기\n");
+    sprintf(buf, "%s", " [2]. 댓글삭제\n");
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s", " [3]. 돌아가기\n\n");
     send(sd, buf, strlen(buf), 0);
@@ -137,11 +139,11 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
     sprintf(buf, "%s", " Input >> ");
     send(sd, buf, strlen(buf), 0);
     memset(buf, 0, sizeof(buf));
-    usleep(0.5);
+    sleep(1);
     n = recv(sd, recv_buf, sizeof(recv_buf), 0);
     a = atoi(recv_buf);
     switch (a) {
-    case 1: //추천하기
+    case 0: //추천하기
       sprintf(buf, "%s", " 추천하였습니다.");
       send(sd, buf, strlen(buf), 0);
       sleep(2);
@@ -150,7 +152,7 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
       usleep(0.5);
       break;
 
-    case 2: //댓글 작성
+    case 1: //댓글 작성
       temp.clear();
       sprintf(buf, "%s", " └ 댓글을 입력하세요 >> ");
       send(sd, buf, strlen(buf), 0);
@@ -161,7 +163,38 @@ int text_reader(int sd, int selection, data_Manager &d_manager, data* temp_data,
       temp.clear();
       usleep(0.5);
       break;
-
+    case 2: //댓글 삭제
+      temp.clear();
+      sprintf(buf, "%s", " └ 삭제하실 댓글 번호를 입력하세요 >> ");
+      send(sd, buf, strlen(buf), 0);
+      n = recv(sd, recv_buf, sizeof(recv_buf), 0);
+      a = atoi(recv_buf);
+      a = a - 1;
+      sprintf(buf, "%s", " └ 정말 삭제 하시겠습니까? [Y/n] >> ");
+      send(sd, buf, strlen(buf), 0);
+      usleep(0.5);
+      memset(recv_buf,0,sizeof(recv_buf));
+      n = recv(sd, recv_buf, sizeof(recv_buf), 0);
+      if(strcmp(recv_buf,"Y")==0){
+        if(now_user.get_userid() == d_manager.data_list[no]->reply_list[a]->get_rp_writer())
+          {
+            //v.erase(v.begin() + i);
+            d_manager.data_list[no]->reply_list.erase(d_manager.data_list[no]->reply_list.begin() + a);
+            //cout << " 댓글 작성자 검색" << endl;
+          }
+        else{
+          sprintf(buf, "%s", " Error :: 작성자가 불일치하여 삭제를 취소합니다. ");
+          send(sd, buf, strlen(buf), 0);
+          sleep(3);
+          break;
+        }
+      }
+      else{
+        sprintf(buf, "%s", " Error :: 댓글 삭제를 취소합니다. ");
+        send(sd, buf, strlen(buf), 0);
+        sleep(3);
+      }
+      break;
     case 3: // 돌아가기
       end_flag = 1;
       sprintf(buf, "%s", "WINDOW");

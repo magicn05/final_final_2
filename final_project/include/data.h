@@ -32,6 +32,7 @@ class data{
         ar & data_date;
         ar & data_owner;
         ar & reply_list;
+  
     }
 
   public:
@@ -54,7 +55,7 @@ class data{
   string get_reply_date(int n);
   //void get_reply_cnt();
   ~data();
-
+  
 };
 
 #endif

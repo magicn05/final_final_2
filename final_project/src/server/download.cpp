@@ -155,6 +155,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s", " Input >> ");
     send(sd, buf, strlen(buf), 0);
+    memset(recv_buf,0,sizeof(recv_buf));
     n = recv(sd, recv_buf, sizeof(recv_buf), 0);
     // recv_buf[n] = '\0';
     a = atoi(recv_buf);
@@ -175,13 +176,18 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       send(sd, buf, strlen(buf), 0);
       n = recv(sd, recv_buf, sizeof(recv_buf), 0);
       a = atoi(recv_buf); // 클라이언트로 부터 받아온 파일 번호..
+      if (a > f_manager.get_file_cnt()){
+        sprintf(buf, "%s", " Error :: 파일 ID를 재확인 해주세요. ");
+        send(sd, buf, strlen(buf), 0);
+        sleep(3);
+        break;
+      }
+      else {
       for (int t = 0; t < f_manager.get_file_cnt(); t++) {
         if ((f_manager.get_file_postno(t)) == a) {
           select = t;
         }
       }
-      // cout << "선택한 파일 이름 : " << f_manager.get_file_title(select) <<
-      // endl;
       memset(buf, 0, sizeof(buf));
       ////////// 클라이언트 다운로드 준비 시작 /////////////
       sprintf(buf, "%s", "DOWNLOAD");
@@ -214,6 +220,7 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       sprintf(buf, "%s", "WINDOW");
       send(sd, buf, strlen(buf), 0);
       usleep(0.5);
+      }
     } break;
 ////////////////////////////////////////////////////////////////
     case 2: //파일 업로드
@@ -272,34 +279,41 @@ int download(int sd, data_Manager &d_manager, file_Manager &f_manager, int &f_no
       memset(recv_buf,0,sizeof(recv_buf));
       n = recv(sd, recv_buf, sizeof(recv_buf),0);
       a = atoi(recv_buf); // 클라이언트로 부터 받아온 파일 번호..
-      memset(buf,0,sizeof(buf));
-      temp = temp + " └ 파일명 : " + f_manager.get_file_title(a-1) + " 삭제하시겠습니까? [Y/n] >> ";
-      strcpy(buf, temp.c_str());
-      send(sd, buf, strlen(buf),0);
-      usleep(0.5);
-      memset(recv_buf,0,sizeof(recv_buf));
-      n = recv(sd, recv_buf, sizeof(recv_buf),0);
-      if (strcmp(recv_buf, "Y")==0){
-        f_manager.list_clear();
-        temp = "rm -rf /home/mobis/Public/Server/" + f_manager.get_file_title(a-1);
-        memset(printbuf,0,sizeof(printbuf));
-        strcpy(printbuf,temp.c_str());
-        //execl("/bin/rm", "rm", printbuf, NULL);
-        system(printbuf);
-        memset(buf,0,sizeof(buf));
-        sprintf(buf, "%s", " Success :: 파일 삭제 성공! ");
+      if (a > f_manager.get_file_cnt()) {
+        sprintf(buf, "%s", " Error :: 파일 ID를 재확인 해주세요. ");
         send(sd, buf, strlen(buf), 0);
-        sleep(2);
+        sleep(3);
         break;
+      } else {
+        memset(buf, 0, sizeof(buf));
+        temp = temp + " └ 파일명 : " + f_manager.get_file_title(a - 1) + " 삭제하시겠습니까? [Y/n] >> ";
+        strcpy(buf, temp.c_str());
+        send(sd, buf, strlen(buf), 0);
+        usleep(0.5);
+        memset(recv_buf, 0, sizeof(recv_buf));
+        n = recv(sd, recv_buf, sizeof(recv_buf), 0);
+        if (strcmp(recv_buf, "Y") == 0) {
+          f_manager.list_clear();
+          temp = "rm -rf /home/mobis/Public/Server/" +
+                 f_manager.get_file_title(a - 1);
+          memset(printbuf, 0, sizeof(printbuf));
+          strcpy(printbuf, temp.c_str());
+          // execl("/bin/rm", "rm", printbuf, NULL);
+          system(printbuf);
+          memset(buf, 0, sizeof(buf));
+          sprintf(buf, "%s", " Success :: 파일 삭제 성공! ");
+          send(sd, buf, strlen(buf), 0);
+          sleep(2);
+          break;
+        } else {
+          memset(buf, 0, sizeof(buf));
+          sprintf(buf, "%s", " Fail :: 파일 삭제 실패! ");
+          send(sd, buf, strlen(buf), 0);
+          sleep(2);
+          break;
+        }
+        cout << "down check";
       }
-      else{
-        memset(buf,0,sizeof(buf));
-        sprintf(buf, "%s", " Fail :: 파일 삭제 실패! ");
-        send(sd, buf, strlen(buf), 0);
-        sleep(2);
-        break;
-      }     
-      cout << "down check"; 
       break;
 
     case 4: // 파일 검색

@@ -1,12 +1,15 @@
 INC = ../../include
 CXX = g++
 CXXFLAGS = -fPIC -c  -g
-LDFLAGS = -L../libsrc -lmenu -lhash -lpthread -ldl -lboost_serialization
+LDFLAGS = -lpthread -lboost_serialization
+#LDFLAGS = -L../libsrc -lmenu -lhash -lpthread -ldl -lboost_serialization
 #LDFLAGS = -L../../lib -lmenu -lprofile -lhash -lio  -lpthread
-OBJS = add.o sub.o board.o
+#OBJS = add.o sub.o board.o
 OBJ1 = server.o user.o manager.o data.o board.o text_reader.o text_writer.o download.o myfile.o reply.o
 
-all: server libadd.so libsub.so libboard.so
+
+all: server libboard.so libdownload.so libmanager.so
+#libadd.so libsub.so libboard.so
 
 server: $(OBJ1)
 	$(CXX) -o $@ $(OBJ1) $(LDFLAGS)
@@ -17,16 +20,18 @@ server: $(OBJ1)
 .cpp.o:
 	$(CXX) -fPIC -c -I$(INC) -g $< 
 
-libboard.so: board.o
-	$(CXX) -shared -fPIC -o $@ $<
 
-libadd.so: add.o
+libboard.so: board.o text_reader.o text_writer.o
 	$(CXX) -shared -fPIC -o $@ $<
-#	cp lib$@.so ../../bin/
+	cp libboard.so ../../lib/
 
-libsub.so: sub.o
+libdownload.so: download.o
 	$(CXX) -shared -fPIC -o $@ $<
-#	cp lib$@.so ../../bin/
+	cp libdownload.so ../../lib/
+
+libmanager.so: data.o myfile.o user.o reply.o manager.o
+	$(CXX) -shared -fPIC -o $@ $<
+	cp libmanager.so ../../lib/
 
 clean:
 	rm *.o lib*.so server 

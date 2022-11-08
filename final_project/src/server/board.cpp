@@ -50,6 +50,9 @@ int board(int sd, data_Manager &d_manager, pthread_mutex_t &mutx, user &now_user
     memset(buf,0,sizeof(buf));
     sprintf(buf, "%s", " 게시판입니다. 여러분의 의견을 공유하세요. \n\n\n");
     send(sd, buf, strlen(buf), 0);
+    sprintf(buf, "%s",
+            "                         B U L L E T I N         B O A R D \n");
+    send(sd, buf, strlen(buf), 0);
     usleep(0.5);
     if(search_flag != 1){
     sprintf(buf, "                                                                     %d %s %d %s", current_page, "page of ", board_page, "pages\n");

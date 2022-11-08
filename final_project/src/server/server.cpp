@@ -327,11 +327,13 @@ int start_menu(int sd, user &now_user) {
     send(sd, buf, strlen(buf), 0);
     sprintf(buf, "%s", "메뉴를 선택하세요\n\n");
     send(sd, buf, strlen(buf), 0);
-    sprintf(buf, "%s", "1번. 로그인\n\n");
+    sprintf(buf, "%s", " [1]. 로그인\n\n");
     send(sd, buf, strlen(buf), 0);
-    sprintf(buf, "%s", "2번. 회원 가입\n\n");
+    sprintf(buf, "%s", " [2]. 회원 가입\n\n");
     send(sd, buf, strlen(buf), 0);
-    sprintf(buf, "%s", "3번. 연결 끊기\n\n");
+    sprintf(buf, "%s", " [3]. 연결 끊기\n\n");
+    send(sd, buf, strlen(buf), 0);
+    sprintf(buf, "%s", " Input >> ");
     send(sd, buf, strlen(buf), 0);
     n = recv(sd, buf, sizeof(buf), 0);
     buf[n] = '\0';
